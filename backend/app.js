@@ -9,20 +9,30 @@ const app = express();
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
   'http://localhost:5173',
   'http://127.0.0.1:5173'
-].filter(Boolean);
+]
+  .filter(Boolean)
+  .flatMap((origin) => origin.split(',').map((item) => item.trim()))
+  .filter(Boolean);
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    const isAllowedRenderOrigin = origin?.endsWith('.onrender.com');
+
+    if (!origin || allowedOrigins.includes(origin) || isAllowedRenderOrigin) {
       return callback(null, true);
     }
+
     return callback(new Error('Not allowed by CORS'));
   },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
+app.options('*', cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -37,4 +47,3 @@ app.use(notFound);
 app.use(errorHandler);
 
 export default app;
-
